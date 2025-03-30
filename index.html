@@ -76,8 +76,6 @@
   </div>
 
   <script>
-    const apiKey = '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'; // 🔐 ВСТАВ СЮДИ СВІЙ КЛЮЧ
-
     async function sendMessage() {
       const inputEl = document.getElementById("userInput");
       const text = inputEl.value.trim();
@@ -89,11 +87,10 @@
       const chatEl = document.getElementById("chat");
       chatEl.scrollTop = chatEl.scrollHeight;
 
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      const res = await fetch("https://api-82hsjjhbv-saha2505s-projects.vercel.app/api/gpt", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           model: "gpt-4",
