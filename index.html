@@ -6,7 +6,8 @@
   <title>Привіт, мамо!</title>
   <style>
     body {
-      margin: 0; padding: 0;
+      margin: 0;
+      padding: 0;
       font-family: sans-serif;
       background-color: #fefefe;
       display: flex;
@@ -86,26 +87,22 @@
       const chatEl = document.getElementById("chat");
       chatEl.scrollTop = chatEl.scrollHeight;
 
-      const res = await fetch("https://api-82hsjjhbv-saha2505s-projects.vercel.app/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          messages: [
-            {
-              role: "system",
-              content: "Ти — ChatGPT в стилі Саші: відповідаєш як справжній співрозмовник — із теплом, легким гумором, зрозуміло, по-людськи. Якщо треба — пояснюєш як син мамі. Можна вставляти емодзі, але не зловживати."
-            },
-            { role: "user", content: text }
-          ]
-        })
-      });
+      try {
+        const res = await fetch("https://api-82hsjjhbv-saha2505s-projects.vercel.app/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ message: text })
+        });
 
-      const data = await res.json();
-      const answer = data?.choices?.[0]?.message?.content || "На жаль, я не отримав відповіді 😢";
-      appendMessage('gpt', answer);
-      speak(answer);
+        const data = await res.json();
+        const answer = data?.reply || "На жаль, я не отримав відповіді 😢";
+        appendMessage('gpt', answer);
+        speak(answer);
+      } catch (e) {
+        appendMessage('gpt', "⚠️ Помилка з'єднання з сервером.");
+      }
     }
 
     function appendMessage(role, text) {
