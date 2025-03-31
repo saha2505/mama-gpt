@@ -8,5 +8,5 @@ async function sendMessage(messages) {
   });
 
   const data = await response.json();
-  return data;
+  return data; 
 }
