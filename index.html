@@ -1,101 +1,54 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>mama-gpt</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      margin: 0;
-      background: #fefefe;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    #chat {
-      flex: 1;
-      padding: 1rem;
-      overflow-y: auto;
-    }
-    .gpt {
-      font-weight: bold;
-      margin-top: 1rem;
-    }
-    #say-more {
-      padding: 1rem;
-      border: none;
-      background: #444;
-      color: white;
-      font-size: 1.2rem;
-      cursor: pointer;
-    }
-  </style>
 </head>
 <body>
-  <div id="chat"></div>
-  <button id="say-more">Сказати ще</button>
+  <h1>mama-gpt</h1>
+  <button id="talk">Сказать ещё</button>
 
   <script>
-    const endpoint = 'https://mama-gpt-api.vercel.app/api/chat';
-    const chat = document.getElementById('chat');
-    const sayMore = document.getElementById('say-more');
-
-    let messages = [];
-
-    async function sendMessageToGPT(text) {
-      messages.push({ role: 'user', content: text });
-
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages })
-      });
-
-      const data = await res.json();
-      const reply = data.choices?.[0]?.message?.content || 'Не вдалося отримати відповідь 😢';
-      messages.push({ role: 'assistant', content: reply });
-
-      chat.innerHTML += `<div class="gpt">🤖 ${reply}</div>`;
-      chat.scrollTop = chat.scrollHeight;
-
-      speak(reply);
-    }
+    const talkBtn = document.getElementById('talk');
+    const synth = window.speechSynthesis;
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'ru-RU';
+    recognition.interimResults = false;
 
     function speak(text) {
-      const msg = new SpeechSynthesisUtterance();
-      msg.text = text;
-      msg.lang = 'uk-UA';
-      msg.rate = 1;
-      speechSynthesis.speak(msg);
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ru-RU';
+      synth.speak(utterance);
     }
 
-    function startListening() {
-      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-      recognition.lang = 'uk-UA';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
+    function askGPT(message) {
+      fetch('https://mama-gpt-api.vercel.app/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+      })
+        .then(res => res.json())
+        .then(data => {
+          const reply = data.choices?.[0]?.message?.content || 'Что-то пошло не так';
+          speak(reply);
+        })
+        .catch(() => speak('Произошла ошибка. Попробуй ещё раз.'));
+    }
 
-      recognition.onresult = (e) => {
-        const text = e.results[0][0].transcript;
-        chat.innerHTML += `<div>🧍‍♀️ ${text}</div>`;
-        sendMessageToGPT(text);
-      };
-
-      recognition.onerror = (e) => {
-        chat.innerHTML += `<div style="color:red">⚠️ Помилка голосу: ${e.error}</div>`;
-      };
-
+    function startRecognition() {
       recognition.start();
+      recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript;
+        askGPT(text);
+      };
     }
 
-    // Автостарт прослуховування при завантаженні
-    window.onload = () => {
-      startListening();
-    };
+    talkBtn.addEventListener('click', () => {
+      if (!synth.speaking) startRecognition();
+    });
 
-    sayMore.onclick = () => {
-      startListening();
-    };
+    // автостарт
+    window.onload = () => startRecognition();
   </script>
 </body>
 </html>
