@@ -1,3 +1,4 @@
+// Updated endpoint to new Vercel proxy
 const endpoint = 'https://mama-gpt-api.vercel.app/api/chat';
 
 async function sendMessage(messages) {
@@ -8,5 +9,5 @@ async function sendMessage(messages) {
   });
 
   const data = await response.json();
-  return data; 
+  return data;
 }
