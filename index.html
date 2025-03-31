@@ -1,136 +1,101 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Привіт, мамо!</title>
+  <meta charset="UTF-8">
+  <title>mama-gpt</title>
   <style>
     body {
-      margin: 0;
-      padding: 0;
       font-family: sans-serif;
-      background-color: #fefefe;
+      margin: 0;
+      background: #fefefe;
       display: flex;
       flex-direction: column;
       height: 100vh;
     }
-    .chat {
+    #chat {
       flex: 1;
+      padding: 1rem;
       overflow-y: auto;
-      padding: 20px;
-    }
-    .message {
-      margin-bottom: 15px;
-    }
-    .user {
-      text-align: right;
-      font-size: 16px;
-      color: #333;
     }
     .gpt {
-      text-align: left;
       font-weight: bold;
-      font-size: 18px;
-      color: #222;
+      margin-top: 1rem;
     }
-    .input-area {
-      padding: 10px;
-      background: #f0f0f0;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    textarea {
-      width: 100%;
-      height: 80px;
-      font-size: 16px;
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      resize: none;
-    }
-    button {
-      padding: 10px;
-      font-size: 16px;
+    #say-more {
+      padding: 1rem;
       border: none;
-      border-radius: 10px;
-      background-color: #6200ee;
+      background: #444;
       color: white;
+      font-size: 1.2rem;
       cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div style="text-align: center; font-size: 14px; color: #888; padding: 8px;">
-    💬 Помічник для мами | v1.2 — GPT-4 через Vercel (Саша mode 🤖)
-  </div>
-
-  <div class="chat" id="chat"></div>
-
-  <div class="input-area">
-    <textarea id="userInput" placeholder="Напиши або скажи запитання..."></textarea>
-    <div style="display: flex; gap: 10px;">
-      <button onclick="sendMessage()">Надіслати</button>
-      <button onclick="startVoice()">🎙️ Сказати</button>
-    </div>
-  </div>
+  <div id="chat"></div>
+  <button id="say-more">Сказати ще</button>
 
   <script>
-    async function sendMessage() {
-      const inputEl = document.getElementById("userInput");
-      const text = inputEl.value.trim();
-      if (!text) return;
+    const endpoint = 'https://mama-gpt-api.vercel.app/api/chat';
+    const chat = document.getElementById('chat');
+    const sayMore = document.getElementById('say-more');
 
-      appendMessage('user', text);
-      inputEl.value = '';
+    let messages = [];
 
-      const chatEl = document.getElementById("chat");
-      chatEl.scrollTop = chatEl.scrollHeight;
+    async function sendMessageToGPT(text) {
+      messages.push({ role: 'user', content: text });
 
-      try {
-        const res = await fetch("https://api-82hsjjhbv-saha2505s-projects.vercel.app/api/chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ message: text })
-        });
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages })
+      });
 
-        const data = await res.json();
-        const answer = data?.reply || "На жаль, я не отримав відповіді 😢";
-        appendMessage('gpt', answer);
-        speak(answer);
-      } catch (e) {
-        appendMessage('gpt', "⚠️ Помилка з'єднання з сервером.");
-      }
-    }
+      const data = await res.json();
+      const reply = data.choices?.[0]?.message?.content || 'Не вдалося отримати відповідь 😢';
+      messages.push({ role: 'assistant', content: reply });
 
-    function appendMessage(role, text) {
-      const chat = document.getElementById("chat");
-      const div = document.createElement("div");
-      div.className = `message ${role}`;
-      div.textContent = text;
-      chat.appendChild(div);
+      chat.innerHTML += `<div class="gpt">🤖 ${reply}</div>`;
       chat.scrollTop = chat.scrollHeight;
+
+      speak(reply);
     }
 
     function speak(text) {
       const msg = new SpeechSynthesisUtterance();
       msg.text = text;
       msg.lang = 'uk-UA';
-      window.speechSynthesis.speak(msg);
+      msg.rate = 1;
+      speechSynthesis.speak(msg);
     }
 
-    function startVoice() {
+    function startListening() {
       const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
       recognition.lang = 'uk-UA';
-      recognition.start();
-      recognition.onresult = function(event) {
-        const result = event.results[0][0].transcript;
-        document.getElementById("userInput").value = result;
-        sendMessage();
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onresult = (e) => {
+        const text = e.results[0][0].transcript;
+        chat.innerHTML += `<div>🧍‍♀️ ${text}</div>`;
+        sendMessageToGPT(text);
       };
+
+      recognition.onerror = (e) => {
+        chat.innerHTML += `<div style="color:red">⚠️ Помилка голосу: ${e.error}</div>`;
+      };
+
+      recognition.start();
     }
+
+    // Автостарт прослуховування при завантаженні
+    window.onload = () => {
+      startListening();
+    };
+
+    sayMore.onclick = () => {
+      startListening();
+    };
   </script>
 </body>
 </html>
