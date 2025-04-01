@@ -25,14 +25,19 @@
       fetch('https://mama-gpt-api.vercel.app/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: 'Ты заботливый помощник, говори добрым голосом.' },
+            { role: 'user', content: message }
+          ]
+        }),
       })
-        .then(res => res.json())
-        .then(data => {
-          const reply = data.choices?.[0]?.message?.content || 'Что-то пошло не так';
-          speak(reply);
-        })
-        .catch(() => speak('Произошла ошибка. Попробуй ещё раз.'));
+      .then(res => res.json())
+      .then(data => {
+        const reply = data.choices?.[0]?.message?.content || 'Что-то пошло не так';
+        speak(reply);
+      })
+      .catch(() => speak('Произошла ошибка. Попробуй ещё раз.'));
     }
 
     function startRecognition() {
@@ -47,7 +52,6 @@
       if (!synth.speaking) startRecognition();
     });
 
-    // автостарт
     window.onload = () => startRecognition();
   </script>
 </body>
